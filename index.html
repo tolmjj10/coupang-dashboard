@@ -389,9 +389,10 @@ function aggregate(){
   state.dp=parseCSV(state.dpText);
   state.bo=parseCSV(state.boText);
 
-  // 전체 날짜 수집 (오름차순)
+  // 전체 날짜 수집 — dp(판매) + bo(입고/재고) 둘 다 (오름차순)
   const dateSet=new Set();
   for(const r of state.dp){ if(r['날짜']) dateSet.add(r['날짜']); }
+  for(const r of state.bo){ if(r['날짜']) dateSet.add(r['날짜']); }
   state.allDays=[...dateSet].sort();
   if(state.allDays.length===0) return;
 
