@@ -451,15 +451,31 @@ function aggregate(){
       });
     }
     const o=skuMap.get(id); const d=r['날짜'];
-    const units=num(r['판매수량(Units Sold)']);
     const gmv=num(r['매출액(GMV)']);
     const cogs=num(r['매입원가(COGS)']);
     const asp=num(r['평균판매금액(ASP)']);
-    o.daily_units[d]=(o.daily_units[d]||0)+units;
     o.daily_gmv[d]=(o.daily_gmv[d]||0)+gmv;
     o.daily_cogs[d]=(o.daily_cogs[d]||0)+cogs;
-    o.total_units+=units; o.total_gmv+=gmv; o.total_cogs+=cogs;
+    o.total_gmv+=gmv; o.total_cogs+=cogs;
     if(asp>0){o.asp_sum+=asp; o.asp_cnt+=1;}
+  }
+  // 출고수량(판매수량)은 basic_operation에서 끌어옴 (센터별 합산)
+  for(const r of state.bo){
+    const id=r['SKU ID']; if(!id) continue;
+    const nm=r['SKU 명']||'';
+    if(isExcluded(nm)) continue;
+    if(!skuMap.has(id)){
+      skuMap.set(id,{sku_id:id, sku_name:nm,
+        category:r['상품 카테고리']||r['상품카테고리']||'기타',
+        sub_category:r['하위 카테고리']||r['하위카테고리']||'',
+        brand:(r['브랜드']||'').trim(),
+        daily_units:{},daily_gmv:{},daily_cogs:{},
+        total_units:0,total_gmv:0,total_cogs:0,asp_sum:0,asp_cnt:0});
+    }
+    const o=skuMap.get(id); const d=r['날짜']; if(!d) continue;
+    const out=num(r['출고수량']);
+    o.daily_units[d]=(o.daily_units[d]||0)+out;
+    o.total_units+=out;
   }
 
   // basic_operation에 없는 SKU는 단종으로 간주 — 표에서 제외
