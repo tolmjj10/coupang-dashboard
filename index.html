@@ -403,14 +403,17 @@ function aggregate(){
   if(!state.customStart) state.customStart=minYmd;
   if(!state.customEnd) state.customEnd=maxYmd;
 
-  // basic_operation: SKU 최신행 → 재고/카테고리/브랜드 (발주불가는 제외)
+  // basic_operation: SKU별 최신 날짜 행 (상태 관계없이)
   const boMap=new Map();
   for(const r of state.bo){
     const id=r['SKU ID']; if(!id) continue;
-    const status=(r['발주가능상태']||'').trim();
-    if(status==='발주불가'||status==='일시중단') continue;
     const prev=boMap.get(id);
     if(!prev||r['날짜']>prev['날짜']) boMap.set(id,r);
+  }
+  // 최신 행의 발주가능상태가 '발주불가'/'일시중단' 이면 표에서 제외
+  for(const [id,r] of [...boMap]){
+    const status=(r['발주가능상태']||'').trim();
+    if(status==='발주불가'||status==='일시중단') boMap.delete(id);
   }
 
   const skuMap=new Map();
