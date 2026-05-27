@@ -291,8 +291,8 @@
 
     <div class="date-controls">
       <span class="label">날짜 보기</span>
-      <button class="date-mode-btn active" data-mode="14">14일</button>
-      <button class="date-mode-btn" data-mode="7">7일</button>
+      <button class="date-mode-btn active" data-mode="7">7일</button>
+      <button class="date-mode-btn" data-mode="14">14일</button>
       <button class="date-mode-btn" data-mode="custom">직접선택</button>
       <span class="custom-range" id="customRange" style="display:none;">
         <input type="date" id="customStart" class="date-input" />
@@ -403,14 +403,33 @@ function aggregate(){
   if(!state.customStart) state.customStart=minYmd;
   if(!state.customEnd) state.customEnd=maxYmd;
 
-  // basic_operation: SKU별 최신 날짜 행 (상태 관계없이)
+  // basic_operation: SKU별 최신 날짜 찾기 → 그 날짜의 모든 센터(FC/VF107 등) 재고 합산
+  const latestDate=new Map();
+  for(const r of state.bo){
+    const id=r['SKU ID']; if(!id) continue;
+    const d=r['날짜']; if(!d) continue;
+    if(!latestDate.has(id)||d>latestDate.get(id)) latestDate.set(id,d);
+  }
   const boMap=new Map();
   for(const r of state.bo){
     const id=r['SKU ID']; if(!id) continue;
+    if(r['날짜']!==latestDate.get(id)) continue;
     const prev=boMap.get(id);
-    if(!prev||r['날짜']>prev['날짜']) boMap.set(id,r);
+    if(!prev){
+      const o=Object.assign({},r);
+      o['현재재고수량']=num(r['현재재고수량']);
+      o['입고수량']=num(r['입고수량']);
+      boMap.set(id,o);
+    } else {
+      prev['현재재고수량']+=num(r['현재재고수량']);
+      prev['입고수량']=(prev['입고수량']||0)+num(r['입고수량']);
+      // 한 센터라도 정상이면 정상 처리
+      const cur=(prev['발주가능상태']||'').trim();
+      const nw=(r['발주가능상태']||'').trim();
+      if((cur==='발주불가'||cur==='일시중단') && nw!=='발주불가' && nw!=='일시중단') prev['발주가능상태']=nw;
+    }
   }
-  // 최신 행의 발주가능상태가 '발주불가'/'일시중단' 이면 표에서 제외
+  // 합산 후 발주가능상태가 '발주불가'/'일시중단'이면 표에서 제외
   for(const [id,r] of [...boMap]){
     const status=(r['발주가능상태']||'').trim();
     if(status==='발주불가'||status==='일시중단') boMap.delete(id);
