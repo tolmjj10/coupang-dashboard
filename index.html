@@ -883,7 +883,7 @@ async function loadAll(){
     const [dpText,boText,mgBuf]=await Promise.all([
       fetch('daily_performance.csv'+bust).then(r=>{if(!r.ok)throw new Error('daily_performance.csv 없음');return r.text();}),
       fetch('basic_operation.csv'+bust).then(r=>{if(!r.ok)throw new Error('basic_operation.csv 없음');return r.text();}),
-      fetch('margin.xlsx'+bust).then(r=>{if(!r.ok)throw new Error('margin.xlsx 없음');return r.arrayBuffer();})
+      fetch('table.xlsx'+bust).then(r=>{if(!r.ok)throw new Error('table.xlsx 없음');return r.arrayBuffer();})
     ]);
     state.dpText=dpText;
     state.boText=boText;
